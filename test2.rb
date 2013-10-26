@@ -1,8 +1,10 @@
 require 'rubygems'
+require 'ostruct'
 require 'twitter' #for easy tweet fetching
 require 'open-uri' #for making any GET request
 require 'crack' #parses xml/json to hashes
 require 'erb'
+require 'geocoder' #for coordinate lookups
 
 load 'oauth_creds.rb' #hide oauth credentials
 creds = MyOauth.new
@@ -27,48 +29,69 @@ def GetTemplate()
 
     <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
     <head>
-            <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
-            <title>Tweets within <%= @rad %><%= @unit %> of <%= @lat %>, <%= @long %></title>
-        </head>
-        <body>
-                 <h1>Results within <%= @rad %><%= @unit %> of <%= @lat %>, <%= @long %></h1>
-                <ul>
-                  <% @tweetlist.each do |item| %>
-     				<li><%= item[:text] %></li>
-                  <% end %>
-                </ul>
-        </body>
-        </html>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+		 <link href="style.css" rel="stylesheet" type="text/css">
+		<title>Tweets within <%= @rad %><%= @unit %> of 
+			<% if @name != nil %>
+				<%= @name %>
+			<% else %>
+				[<%= @lat %>, <%= @long %>]
+			<% end %>
+		</title>
+	</head>
+	<body>
+		 <h1>Results within <%= @rad %><%= @unit %> of 
+			<% if @name != nil %>
+				<%= @name %>
+			<% else %>
+				[<%= @lat %>, <%= @long %>]
+			<% end %>
+		 </h1>
+	 
+		  <% @tweetlist.each do |item| %>
+			  <div class = "cont">
+					<span class = "t_box t_text">
+						<%= item[:text] %>
+					</span>
+					<span class = "t_box t_time">
+						at <%= item[:time] %>
+					</span>
+					<span class = "t_box t_loc">
+						from <%= item[:coord] %>
+					</span>
+				</div>
+		  <% end %>
+	</body>
+	</html>
   }
   
 end
 
 class TweetSearch
+  attr_accessor :lat, :long, :rad, :unit, :count, :text, :tweetlist, :lang, :name
 
-	attr_accessor :long, :lat, :rad, :unit, :count, :text, :tweetlist
+  DEFAULTS = {:count => 10, :text => "", :lang => "en", :name => "", :rad => "10", :unit => "mi"}
 
-	def initialize(long,lat,rad,unit="mi",count=10,text="")
-		@long = long
-		@lat = lat
-		@rad = rad
-		@unit = unit
-		@location = @long+","+@lat+","+@rad+@unit
-		@count = count
-		@text = text
-		@tweetlist = []
-	end
+  def initialize(lat, long, options = {})
+	options = DEFAULTS.merge(options) #merge default values and parameters
+	@lat = lat.to_s()
+	@long = long.to_s()
+	@rad = options[:rad].to_s()
+	@unit = options[:unit].to_s()
+	@location = @long+","+@lat+","+@rad+@unit
+	@tweetlist = []
+  end
 	
-	def list #finds tweetlist, an array of hashes
-		@tweetlist = []
-		Twitter.search(@text, :count=>@count, :geocode=>@location).results.map {|status|
-			unless status.geo == nil
-				hash = {:text=>status.text,:coord=>status.geo.coordinates}
-				@tweetlist.push(hash)
-			end
-		}
-		return @tweetlist
-    end    
-    
+  def list #finds tweetlist, an array of hashes
+	@tweetlist = []
+	Twitter.search(@text, :count=>1000, :geocode=>@location, :lang => "en").results.map {|status|
+		unless status.geo == nil 
+			hash = {:text=>status.text,:time=>status.created_at,:coord=>status.geo.coordinates}
+			@tweetlist.push(hash)
+		end
+	}
+	return @tweetlist
+  end    
 end
 
 class SearchResults
@@ -79,10 +102,11 @@ class SearchResults
   def initialize(search, template)
   	@tweetlist = search.list
 	@template = template
-	@long = search.long
 	@lat = search.lat
+	@long = search.long
 	@rad = search.rad
 	@unit = search.unit
+	@name = search.name
   end
 
   def render()
@@ -98,6 +122,6 @@ class SearchResults
 end
 
 
-tweetsearch1 = TweetSearch.new("42.3581","71.0636","10")
+tweetsearch1 = TweetSearch.new("71.0636","42.3581")
 search1 = SearchResults.new(tweetsearch1,GetTemplate())
-search1.save(File.join(ENV['HOME'],'examplesearch.html'))
+search1.save('examplesearch.html')
