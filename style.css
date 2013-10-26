@@ -1,0 +1,38 @@
+h1 {
+	color: #CC333F;
+	font-weight: normal;
+}
+
+body {
+	font-family: Helvetica,Arial,sans-serif;
+	font-size: 12px;
+	line-height: 1.5;
+	background-color: #EFEFEF;
+}
+
+.cont {
+	clear: both;
+	padding: 10px;
+	margin-bottom: 10px;
+	overflow: auto;
+	width: 100%
+}
+
+.t_box {
+	padding: 12px;
+	margin: 6px -6px -6px 6px;
+	float: left;
+	font-size: 1.5em;
+}
+
+.t_text {
+	background-color: #EDC951;
+}
+
+.t_time {
+	background-color: #EB6841;
+}
+
+.t_loc {
+	background-color: #00A0B0;
+}
