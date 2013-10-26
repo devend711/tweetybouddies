@@ -1,10 +1,6 @@
 require 'rubygems'
-require 'ostruct'
 require 'twitter' #for easy tweet fetching
-require 'open-uri' #for making any GET request
-require 'crack' #parses xml/json to hashes
 require 'erb'
-require 'geocoder' #for coordinate lookups
 
 load 'oauth_creds.rb' #hide oauth credentials
 creds = MyOauth.new
@@ -68,7 +64,7 @@ def GetTemplate()
 end
 
 class TweetSearch
-  attr_accessor :lat, :long, :rad, :unit, :count, :text, :tweetlist, :lang, :name
+  attr_accessor :lat, :long, :rad, :unit, :tweetlist, :name
 
   DEFAULTS = {:count => 10, :text => "", :lang => "en", :name => "", :rad => "10", :unit => "mi"}
 
@@ -97,7 +93,6 @@ end
 class SearchResults
 
   include ERB::Util
-  attr_accessor :tweetlist, :template
 
   def initialize(search, template)
   	@tweetlist = search.list
